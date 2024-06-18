@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "efficiency-6"
+version = "0.1.0"
+description = ""
+authors = ["Arvid Berndtsson <arvid@berndtsson.me>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pre-commit = "^3.7.1"
+ruff = "^0.4.9"
+pyright = "^1.1.367"
+fastapi = "^0.111.0"
+regex = "^2024.5.15"
+aiohttp = "^3.9.5"
+uvicorn = "pydantic"
+pydantic = "^2.7.4"
+pydantic-settings = "^2.3.3"
+jinja2 = "^3.1.4"
+uvloop = "^0.19.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

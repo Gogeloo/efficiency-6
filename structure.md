@@ -45,9 +45,6 @@ efficiency-6
 │   ├── test_computercraft.py
 │   ├── test_pydantic_version.py
 │   └── test_user_management.py
-├── tailwind.config.js - This is the configuration file for Tailwind CSS. Here, we can customize our design system.
-├── postcss.config.js - This is the configuration file for PostCSS, a tool for transforming CSS with JavaScript, which is used by Tailwind.
-├── package.json - This file lists the Node.js dependencies of our frontend application, including Tailwind CSS and PostCSS.
 ├── Dockerfile - This file contains the instructions to Dockerize our application.
 ├── .pre-commit-config.yaml - This file contains the configuration for pre-commit hooks.
 ├── requirements.txt - This file lists the Python dependencies of our application.
