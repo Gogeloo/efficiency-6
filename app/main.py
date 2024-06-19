@@ -6,11 +6,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
 from app.api.api import api_router
-from app.frontend.frontend import frontend_router
-from app.utils.robots import robots_router
-from app.utils.sitemap import sitemap_router
-from app.utils.favicon import favicon_router
-from .settings import settings
+# from app.frontend.frontend import frontend_router
+# from app.utils.robots import robots_router
+# from app.utils.sitemap import sitemap_router
+# from app.utils.favicon import favicon_router
+# from .settings import settings
 import anyio
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Iterator
