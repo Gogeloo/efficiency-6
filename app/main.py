@@ -6,6 +6,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
 from app.api.api import api_router
+from .settings import settings
+
 # from app.frontend.frontend import frontend_router
 # from app.utils.robots import robots_router
 # from app.utils.sitemap import sitemap_router
@@ -102,12 +104,18 @@ async def index():
     return RedirectResponse(url="/api/docs")
 
 
-@app.get("/api/docs", tags=["Documentation Formats"], response_class=HTMLResponse, include_in_schema=False)
+@app.get(
+    "/api/docs",
+    tags=["Documentation Formats"],
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
 async def stoplight() -> HTMLResponse:
     """
     Renders an HTML page with a stoplight using the Stoplight Elements library.
     """
-    return HTMLResponse("""
+    return HTMLResponse(
+        """
     <!doctype html>
     <html lang="en">
       <head>
@@ -132,7 +140,8 @@ async def stoplight() -> HTMLResponse:
         />
 
       </body>
-    </html>""")
+    </html>"""
+    )
 
 
 app.include_router(api_router, prefix="/api/v1")
@@ -142,5 +151,5 @@ app.include_router(api_router, prefix="/api/v1")
 # app.include_router(favicon_router)
 
 if __name__ == "__main__":
-  # uvicorn.run(app, loop="uvloop")
-  pass
+    # uvicorn.run(app, loop="uvloop")
+    pass
