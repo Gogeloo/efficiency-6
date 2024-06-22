@@ -5,7 +5,7 @@ import os
 import logging
 from ....settings import settings  # Adjust this import according to your structure
 from ...models.detailed_error_response import DetailedErrorResponseModel
-from ...models.file_response import FileResponseModel
+from ...models.file_get_response import GetFileResponseModel
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def file_exists(file_path: str) -> bool:
     response_class=FileResponse,
     responses={
         200: {
-            "model": FileResponseModel,
+            "model": GetFileResponseModel,
             "content": {"application/octet-stream": {}},
             "description": "Lua file successfully retrieved",
         },
