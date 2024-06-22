@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    auth_key: str
     path_to_lua_files: str = "lua_files"
 
     class Config:
