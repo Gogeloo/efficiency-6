@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Form, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 from ....settings import settings  # Adjust this import according to your structure
 from ...models.detailed_error_response import DetailedErrorResponseModel
+from ...models.file_create_response import PostFileResponseModel
 from fastapi.encoders import jsonable_encoder
 
 # Initialize logging
@@ -24,6 +25,18 @@ def save_file_content(file_content: str, file_path: str) -> None:
             buffer.write(file_content)
     except Exception as e:
         raise OSError(f"Error saving file: {str(e)}")
+
+
+def ensure_directory_exists(file_path: str) -> None:
+    """
+    Ensure that the directory for the file path exists.
+    """
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        try:
+            os.makedirs(directory)
+        except Exception as e:
+            raise OSError(f"Error creating directory: {str(e)}")
 
 
 def validate_path(path: str) -> str:
@@ -62,7 +75,7 @@ def get_auth_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
         },
         409: {
             "model": DetailedErrorResponseModel,
-            "description": "File already exists",
+            "description": "File already exists. Use overwrite flag to replace it.",
         },
         500: {
             "model": DetailedErrorResponseModel,
@@ -71,16 +84,19 @@ def get_auth_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
     },
 )
 async def create_lua_file(
-    content: str = Form(...),
-    path: str = Form(...),
+    request: PostFileResponseModel,
     auth_key: str = Depends(get_auth_key),
 ):
     """
     Endpoint to create a new Lua file in the specified directory.
     """
     try:
-        path = validate_path(path)
-        content = validate_content(content)
+        path = validate_path(request.path)
+        content = validate_content(request.content)
+
+        # Automatically add .lua extension if not present
+        if not path.endswith(".lua"):
+            path += ".lua"
 
         base_directory = os.path.realpath(settings.path_to_lua_files)
         file_path = os.path.realpath(os.path.join(base_directory, path))
@@ -90,25 +106,20 @@ async def create_lua_file(
             logger.warning(f"Invalid file path access attempt: {file_path}")
             raise HTTPException(status_code=400, detail="Invalid file path")
 
-        # Ensure the file has a .lua extension
-        if not file_path.endswith(".lua"):
-            logger.warning(f"Invalid file type attempt: {file_path}")
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid file type. Only .lua files are allowed.",
-            )
+        # Ensure the directory exists
+        ensure_directory_exists(file_path)
 
         # Check if the file already exists
-        if os.path.exists(file_path):
-            logger.warning(f"File already exists: {file_path}")
-            raise HTTPException(status_code=409, detail="File already exists")
+        if os.path.exists(file_path) and not request.overwrite:
+            logger.warning(f"File already exists and overwrite not allowed: {file_path}")
+            raise HTTPException(status_code=409, detail="File already exists. Use overwrite flag to replace it.")
 
         # Save the file content
         save_file_content(content, file_path)
 
-        logger.info(f"File successfully created: {file_path}")
+        logger.info(f"File successfully created or overwritten: {file_path}")
         return JSONResponse(
-            status_code=201, content={"message": "File successfully created"}
+            status_code=201, content={"message": "File successfully created or overwritten"}
         )
 
     except ValueError as ve:
@@ -124,6 +135,7 @@ async def create_lua_file(
             message="An OS error occurred while creating the file.",
             code=500,
             details=str(e),
+            timestamp=datetime.utcnow()
         )
         return JSONResponse(status_code=500, content=jsonable_encoder(response_model))
     except Exception as e:
@@ -133,5 +145,6 @@ async def create_lua_file(
             message="An unexpected error occurred while creating the file.",
             code=500,
             details=str(e),
+            timestamp=datetime.utcnow()
         )
         return JSONResponse(status_code=500, content=jsonable_encoder(response_model))

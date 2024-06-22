@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 import os
 import logging
 from ....settings import settings  # Adjust this import according to your structure
-from ...models.file_list_response import FileListResponseModel
+from ...models.file_list_response import GetFileListResponseModel
 from ...models.detailed_error_response import DetailedErrorResponseModel
 
 # Initialize logging
@@ -28,7 +28,7 @@ def list_lua_files(directory: str) -> list:
 
 @router.get(
     "/",
-    response_model=FileListResponseModel,
+    response_model=GetFileListResponseModel,
     responses={
         200: {"description": "List of Lua files successfully retrieved"},
         500: {
@@ -44,7 +44,7 @@ async def get_lua_file_list():
     try:
         base_directory = os.path.realpath(settings.path_to_lua_files)
         lua_files = list_lua_files(base_directory)
-        return FileListResponseModel(files=lua_files)
+        return GetFileListResponseModel(files=lua_files)
 
     except OSError as e:
         logger.error(f"OS error occurred: {str(e)} while listing Lua files.")

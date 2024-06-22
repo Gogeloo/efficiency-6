@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class FileResponseModel(BaseModel):
+class GetFileResponseModel(BaseModel):
     detail: str
