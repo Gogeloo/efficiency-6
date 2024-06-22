@@ -1,13 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 import logging
-from datetime import datetime
-from ....settings import settings  # Adjust this import according to your structure
+from ....settings import Settings
 from ...models.detailed_error_response import DetailedErrorResponseModel
-from ...models.file_create_response import PostFileResponseModel
+from ...models.file_create_response import PostFileRequestModel, PostFileResponseModel
 from fastapi.encoders import jsonable_encoder
+from typing import Annotated
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -60,15 +60,37 @@ def get_auth_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Dependency to check the authentication key.
     """
-    if credentials.credentials != settings.auth_key:
+    if credentials.credentials != settings.auth_key:  # type: ignore # noqa: F821
         raise HTTPException(status_code=401, detail="Unauthorized")
     return credentials.credentials
+
+
+def get_settings() -> Settings:
+    """
+    Dependency to get settings.
+    """
+    return Settings()
+
+
+def create_error_response(status_code: int, error: str, message: str, details: str):
+    """
+    Create a detailed error response.
+    """
+    response_model = DetailedErrorResponseModel(
+        error=error, message=message, code=status_code, details=details
+    )
+    return JSONResponse(
+        status_code=status_code, content=jsonable_encoder(response_model)
+    )
 
 
 @router.post(
     "/create",
     responses={
-        201: {"description": "File successfully created"},
+        201: {
+            "model": PostFileResponseModel,
+            "description": "File successfully created",
+        },
         400: {
             "model": DetailedErrorResponseModel,
             "description": "Invalid file path or type",
@@ -84,8 +106,19 @@ def get_auth_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
     },
 )
 async def create_lua_file(
-    request: PostFileResponseModel,
+    request: Annotated[
+        PostFileRequestModel,
+        Body(
+            ...,
+            example={
+                "content": "Menu = {}\nMenu.__index = Menu\n\n-- Constructor\nfunction Menu:new()\n    local self = setmetatable({}, Menu)\n    self.items = {}\n    self.selectedItems = {}\n    self.currItem = 1\n    return self\nend\n\nfunction Menu:down()\n    self.currItem = self.currItem + 1\n    if self.currItem > #self.items then\n        self.currItem = 1\n    end\nend\n\nfunction Menu:up()\n    self.currItem = self.currItem - 1\n    if self.currItem < 1 then\n        self.currItem = #self.items\n    end\nend\n\nreturn Menu",
+                "path": "subdir/example.lua",
+                "overwrite": False,
+            },
+        ),
+    ],
     auth_key: str = Depends(get_auth_key),
+    settings: Settings = Depends(get_settings),
 ):
     """
     Endpoint to create a new Lua file in the specified directory.
@@ -111,40 +144,42 @@ async def create_lua_file(
 
         # Check if the file already exists
         if os.path.exists(file_path) and not request.overwrite:
-            logger.warning(f"File already exists and overwrite not allowed: {file_path}")
-            raise HTTPException(status_code=409, detail="File already exists. Use overwrite flag to replace it.")
+            logger.warning(
+                f"File already exists and overwrite not allowed: {file_path}"
+            )
+            raise HTTPException(
+                status_code=409,
+                detail="File already exists. Use overwrite flag to replace it.",
+            )
 
         # Save the file content
         save_file_content(content, file_path)
 
         logger.info(f"File successfully created or overwritten: {file_path}")
-        return JSONResponse(
-            status_code=201, content={"message": "File successfully created or overwritten"}
+        response_model = PostFileResponseModel(
+            message="File successfully created or overwritten", file_path=file_path
         )
+        return JSONResponse(status_code=201, content=jsonable_encoder(response_model))
 
     except ValueError as ve:
         logger.warning(f"Validation error: {str(ve)}")
-        raise HTTPException(status_code=400, detail=str(ve))
+        return create_error_response(400, "Validation Error", str(ve), str(ve))
     except HTTPException as http_exc:
         # Re-raise HTTP exceptions directly
         raise http_exc
     except OSError as e:
         logger.error(f"OS error occurred: {str(e)} while creating file: {path}")
-        response_model = DetailedErrorResponseModel(
-            error="Internal Server Error",
-            message="An OS error occurred while creating the file.",
-            code=500,
-            details=str(e),
-            timestamp=datetime.utcnow()
+        return create_error_response(
+            500,
+            "Internal Server Error",
+            "An OS error occurred while creating the file.",
+            str(e),
         )
-        return JSONResponse(status_code=500, content=jsonable_encoder(response_model))
     except Exception as e:
         logger.error(f"Unexpected error occurred: {str(e)} while creating file: {path}")
-        response_model = DetailedErrorResponseModel(
-            error="Internal Server Error",
-            message="An unexpected error occurred while creating the file.",
-            code=500,
-            details=str(e),
-            timestamp=datetime.utcnow()
+        return create_error_response(
+            500,
+            "Internal Server Error",
+            "An unexpected error occurred while creating the file.",
+            str(e),
         )
-        return JSONResponse(status_code=500, content=jsonable_encoder(response_model))
