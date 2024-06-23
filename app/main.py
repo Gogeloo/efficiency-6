@@ -127,7 +127,7 @@ async def stoplight() -> HTMLResponse:
               height: 100%;
             }
           </style>
-        <title>LimeTip API</title>
+        <title>Efficiency-6 API</title>
 
         <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
         <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
