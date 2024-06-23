@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 import logging
-from ....settings import Settings
+from ....settings import Settings, settings
 from ...models.detailed_error_response import DetailedErrorResponseModel
 from ...models.file_create_response import PostFileRequestModel, PostFileResponseModel
 from fastapi.encoders import jsonable_encoder
