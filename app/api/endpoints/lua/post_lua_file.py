@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 import logging
-from ....settings import Settings, settings
+from ....settings import settings
 from ...models.detailed_error_response import DetailedErrorResponseModel
 from ...models.file_create_response import PostFileRequestModel, PostFileResponseModel
 from fastapi.encoders import jsonable_encoder
@@ -65,13 +65,6 @@ def get_auth_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
     return credentials.credentials
 
 
-def get_settings() -> Settings:
-    """
-    Dependency to get settings.
-    """
-    return Settings()
-
-
 def create_error_response(status_code: int, error: str, message: str, details: str):
     """
     Create a detailed error response.
@@ -118,7 +111,6 @@ async def create_lua_file(
         ),
     ],
     auth_key: str = Depends(get_auth_key),
-    settings: Settings = Depends(get_settings),
 ):
     """
     Endpoint to create a new Lua file in the specified directory.
